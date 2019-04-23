@@ -35,4 +35,14 @@ public class AccountService {
 		
 	}
 	
+	public boolean validateToken(String token) {
+		return token.equals("123");
+	}
+	
+	public AccoutDetails saveNewAccount(AccountFormFields fields) {
+		AccountEntity accountEntity = new AccountEntity();
+		converter(fields, accountEntity);
+		return new AccoutDetails((accountRepository.save(accountEntity)).getIdcustomers_account().intValue());
+	}
+	
 }

@@ -8,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,7 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.capgemini.beans.AccountFormFields;
 import com.capgemini.beans.AccountType;
 import com.capgemini.beans.AccoutDetails;
+import com.capgemini.beans.TokenValidationEntity;
+import com.capgemini.entities.AccountEntity;
 import com.capgemini.exception.AccountValidationException;
+import com.capgemini.repositories.AccountRepository;
 import com.capgemini.services.AccountService;
 import com.capgemini.services.AccountValidation;
 
@@ -31,6 +36,9 @@ public class AccountController {
 	@Autowired
 	private AccountService accountService;
 	
+	@Autowired
+	private AccountRepository accountRepository;
+	
 	//for security purpose we have to add Authorization (SSO) to the header
 	
 	@GetMapping("/getexample")
@@ -43,7 +51,7 @@ public class AccountController {
 		accountFormFields.setAccountType(AccountType.CHECKING);
 		accountFormFields.setBalance(400.0);
 		accountFormFields.setDob("01/01/2000");
-		accountFormFields.setEmail("email@email.com");
+		accountFormFields.setEmail("falko@email.com");
 		accountFormFields.setFirstName("firstName");
 		accountFormFields.setHomeAddress("100 homeAddress");
 		accountFormFields.setLastName("lastName");
@@ -68,6 +76,60 @@ public class AccountController {
 		
 		return accountService.putNewAccount(accountFormFields);
 		
+	}
+	
+	@PostMapping("/save")
+	public AccoutDetails save(@RequestBody AccountFormFields fields) {
+		try {
+			accountValidation.accountFormFieldsValidate(fields);
+		}catch(AccountValidationException e) {
+			System.err.println(e.getMessage());
+			log.error(e.getMessage());
+			System.out.println(fields);
+			return new AccoutDetails(0);
+		}
+		return accountService.saveNewAccount(fields);
+	}
+	
+//	@GetMapping("/sendlogin/{username}/{password}")
+//	public ResponseEntity<String> sendLogin(@PathVariable String username, @PathVariable String password) {
+//		if(!accountService.getLogin(username, password)) {
+//			return null;
+//		}else {
+//			HttpHeaders headers = new HttpHeaders();
+//			return new ResponseEntity<>("123", headers, HttpStatus.OK);
+//		}
+//	}
+	
+	@GetMapping("/providetoken")
+	public ResponseEntity<TokenValidationEntity> sendToken(){
+		TokenValidationEntity tokenValidationEntity = new TokenValidationEntity();
+		tokenValidationEntity.setToken("123");
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Authorization", tokenValidationEntity.getToken());
+		
+		return new ResponseEntity<>(tokenValidationEntity, headers, HttpStatus.OK);
+	}
+	
+	@PostMapping("/checktoken")
+	public ResponseEntity<TokenValidationEntity> checkToken(@RequestBody TokenValidationEntity token){
+		if(validateToken(token) == 0) {
+			TokenValidationEntity tokenValidationEntity = new TokenValidationEntity();
+			tokenValidationEntity.setToken("123");
+			
+			HttpHeaders headers = new HttpHeaders();
+			headers.add("Authorization", tokenValidationEntity.getToken());
+			
+			return new ResponseEntity<>(tokenValidationEntity, headers, HttpStatus.OK);
+		}
+		return null;
+	}
+	
+	public int validateToken(TokenValidationEntity token) {
+		if(accountService.validateToken(token.getToken()))
+			return 0;
+		return 1;
 	}
 	
 }
