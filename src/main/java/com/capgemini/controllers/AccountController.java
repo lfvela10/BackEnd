@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.capgemini.beans.AccountFormFields;
 import com.capgemini.beans.AccountType;
 import com.capgemini.beans.AccoutDetails;
+import com.capgemini.beans.TokenCorrect;
 import com.capgemini.beans.TokenValidationEntity;
 import com.capgemini.entities.AccountEntity;
 import com.capgemini.exception.AccountValidationException;
@@ -35,9 +36,6 @@ public class AccountController {
 	
 	@Autowired
 	private AccountService accountService;
-	
-	@Autowired
-	private AccountRepository accountRepository;
 	
 	//for security purpose we have to add Authorization (SSO) to the header
 	
@@ -113,17 +111,13 @@ public class AccountController {
 	}
 	
 	@PostMapping("/checktoken")
-	public ResponseEntity<TokenValidationEntity> checkToken(@RequestBody TokenValidationEntity token){
+	public TokenCorrect checkToken(@RequestBody TokenValidationEntity token){
+		TokenCorrect tokenCorrect = new TokenCorrect();
 		if(validateToken(token) == 0) {
-			TokenValidationEntity tokenValidationEntity = new TokenValidationEntity();
-			tokenValidationEntity.setToken("123");
-			
-			HttpHeaders headers = new HttpHeaders();
-			headers.add("Authorization", tokenValidationEntity.getToken());
-			
-			return new ResponseEntity<>(tokenValidationEntity, headers, HttpStatus.OK);
+			tokenCorrect.setTokenCorrect("0");
+			return tokenCorrect;
 		}
-		return null;
+		return tokenCorrect;
 	}
 	
 	public int validateToken(TokenValidationEntity token) {
